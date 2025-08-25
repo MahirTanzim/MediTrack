@@ -1,4 +1,4 @@
-# 💊 MediTrack: Smart medicine box with cloud integration and mobille monitoring system
+# 💊 MediTrack: Smart Medicine Box with IoT Integration
 
 A complete IoT solution for medication management using ESP32, designed to help patients and caregivers track medicine intake with real-time notifications and comprehensive logging.
 
@@ -7,27 +7,31 @@ A complete IoT solution for medication management using ESP32, designed to help 
 ## 🌟 Features
 
 ### 📱 Mobile App Control
-- **Remote Time Setting**: Configure medicine schedules from anywhere
-- **Real-time Status Monitoring**: Visual LED indicators for each drawer
-- **Push Notifications**: Instant alerts for medicine time and missed doses
+- **Remote Time Setting**: Configure medicine schedules from anywhere using time input widgets
+- **Real-time Status Monitoring**: View current medicine schedule and taken status
+- **Push Notifications**: Instant alerts for medicine time reminders
 - **Complete Activity Log**: Detailed history with timestamps
-- **Manual Testing**: Remote drawer testing functionality
+- **Current Time Display**: Check RTC time remotely with a button press
 
 ### ⏰ Smart Scheduling
 - **6 Customizable Time Slots**: Perfect for multiple daily medications
+  - Morning Before/After Breakfast
+  - Noon Before/After Lunch  
+  - Night Before/After Dinner
 - **Automatic Reminders**: Red LED + buzzer alerts at scheduled times
-- **Missed Dose Detection**: Alerts if medicine not taken within 30 minutes
 - **Daily Reset**: Automatic schedule reset at midnight
+- **Green LED Confirmation**: 10-minute confirmation when medicine is taken
 
-### 🔔 Multi-Level Notifications
-- 🕐 **Medicine Time Alert**: When it's time to take medication
-- ✅ **Confirmation Alert**: When medicine is successfully taken
-- ⚠️ **Missed Medicine Warning**: If dose is missed for 30+ minutes
+### 🔔 Intelligent Notifications
+- 🕐 **Medicine Time Alert**: Red LED + buzzer when it's time to take medication
+- ✅ **Confirmation**: Green LED when medicine is successfully taken
+- 📱 **Blynk Events**: Push notifications sent to your mobile device
 
 ### 📊 Health Tracking
 - **Daily Intake Logging**: Complete record of all medication activities
-- **Compliance Monitoring**: Track adherence to medication schedule
+- **Status Monitoring**: Track which medicines have been taken
 - **Historical Data**: Perfect for sharing with healthcare providers
+- **Manual Reset**: Clear daily logs and reset status anytime
 
 ## 🔧 Hardware Requirements
 
@@ -41,7 +45,7 @@ A complete IoT solution for medication management using ESP32, designed to help 
 | Green LEDs | 6 | Medicine taken confirmation |
 | Buzzer | 1 | Audio alerts |
 | Resistors (220Ω) | 12 | LED current limiting |
-| Pull-up Resistors (10kΩ) | 4 | For input-only GPIO pins |
+| Pull-up Resistors (10kΩ) | 4 | For input-only GPIO pins (34-39) |
 
 ### Pin Connections
 
@@ -56,8 +60,13 @@ ESP32 Pin Assignments:
 
 ### Circuit Notes
 - **GPIO 34-39**: Input-only pins, require external 10kΩ pull-up resistors
-- **GPIO 2, 4**: Can use internal pull-up resistors
+- **GPIO 2, 4**: Use internal pull-up resistors (INPUT_PULLUP)
 - **RTC Module**: Connect VCC to 3.3V, GND to GND
+- **LEDs**: Use 220Ω current-limiting resistors
+
+### Block Diagram
+
+![alt text](<Images/Untitled Diagram (2).jpg>)
 
 ## 📚 Software Dependencies
 
@@ -74,7 +83,7 @@ Install these libraries through Arduino IDE Library Manager:
 #include <BlynkSimpleEsp32.h> // by Volodymyr Shymanskyy
 ```
 
-### Installation Commands
+### Installation Steps
 ```bash
 # In Arduino IDE:
 Tools → Manage Libraries → Search and Install:
@@ -85,33 +94,39 @@ Tools → Manage Libraries → Search and Install:
 ## ⚙️ Setup Instructions
 
 ### 1. Hardware Assembly
-1. Connect components according to pin diagram
+1. Connect components according to pin diagram above
 2. Install ESP32 in breadboard/PCB
-3. Connect RTC module via I2C
-4. Wire reed switches with pull-up resistors for GPIO 34-39
+3. Connect RTC module via I2C (SDA-21, SCL-22)
+4. Wire reed switches:
+   - Pins 2, 4: Direct connection (uses INPUT_PULLUP)
+   - Pins 34-39: External 10kΩ pull-up resistors required
 5. Connect LEDs with 220Ω current-limiting resistors
-6. Add buzzer with appropriate driver circuit
+6. Add buzzer to pin 19
 
 ### 2. Blynk Configuration
 
 #### Create Blynk Template
-1. Go to [console.blynk.io](https://console.blynk.io)
-2. Create new template: **"Smart Medicine Box"**
+1. Go to [console.blynk.cloud](https://console.blynk.cloud)
+2. Create new template: **"MediTrack"** 
 3. Hardware: **ESP32**, Connection: **WiFi**
-4. Note your **Template ID**
+4. Copy your **Template ID**
 
 #### Configure Datastreams
-Add these Virtual Pins in your template:
+Add these Virtual Pins in your Blynk template:
 
 | Pin | Name | Type | Purpose |
 |-----|------|------|---------|
-| V0-V5 | Medicine Times | String | Schedule input |
-| V6 | Current Time | String | Time display |
-| V7 | Medicine Log | String | Activity history |
-| V8 | System Status | String | Status updates |
-| V9 | Reset Log | Integer | Manual reset |
-| V10 | Manual Test | Integer | Remote testing |
-| V11-V16 | Drawer Status | Integer | LED indicators |
+| V0 | Morning Before Time | String | Time input widget |
+| V1 | Morning After Time | String | Time input widget |
+| V2 | Noon Before Time | String | Time input widget |
+| V3 | Noon After Time | String | Time input widget |
+| V4 | Night Before Time | String | Time input widget |
+| V5 | Night After Time | String | Time input widget |
+| V6 | Medicine Log | String | Log display |
+| V7 | Reset Log | Integer | Reset button |
+| V8 | Status Display | String | Current status |
+| V9 | Current Time Button | Integer | Get time button |
+| V10 | Current Time Display | String | Time display |
 
 #### Create Device
 1. Go to **Devices** tab
@@ -119,207 +134,224 @@ Add these Virtual Pins in your template:
 3. Copy **Auth Token** for Arduino code
 
 #### Setup Events
-Create these events for notifications:
-- `medicine_time` - Medicine Time Alert
-- `medicine_taken` - Medicine Taken Confirmation  
-- `missed_medicine` - Missed Medicine Warning
+Create event for notifications:
+- **Event Name**: `medicine_reminder`
+- **Description**: Medicine reminder notification
 
 ### 3. Mobile App Setup
+
+#### Download Blynk IoT App
+- **Android**: Google Play Store
+- **iOS**: App Store
+- Search for **"Blynk IoT"** (NOT Blynk Legacy)
 
 #### Add Widgets
 | Widget Type | Virtual Pin | Configuration |
 |-------------|-------------|---------------|
-| Time Input | V0-V5 | Medicine schedule times |
-| Label | V6, V8 | Current time & status |
-| Terminal | V7 | Medicine intake log |
-| Button | V9 | Reset daily log |
-| Menu | V10 | Manual drawer test |
-| LED | V11-V16 | Drawer status indicators |
+| Time Input | V0-V5 | Medicine schedule times (24H format) |
+| Label | V8 | Current medicine status |
+| Label | V6 | Medicine intake log |
+| Button | V7 | Reset daily log (Push mode) |
+| Button | V9 | Show current time (Push mode) |
+| Label | V10 | Current time display |
 
 ### 4. Code Configuration
 
-Update these credentials in the code:
+Update these credentials in `MediTrack.ino`:
 
 ```cpp
 // Blynk Credentials (from Blynk Console)
-#define BLYNK_TEMPLATE_ID "TMPL6niMtcd8O"        // Your Template ID
-#define BLYNK_TEMPLATE_NAME "Meditrack"          // Your Template Name  
-#define BLYNK_AUTH_TOKEN "Your_Auth_Token_Here"  // Your Device Auth Token
+#define BLYNK_TEMPLATE_ID "Template_ID"      // Your Template ID
+#define BLYNK_TEMPLATE_NAME "Template_name"  // Your Template Name  
+#define BLYNK_AUTH_TOKEN "Auth_token"        // Your Device Auth Token
 
 // WiFi Credentials
-const char* ssid = "Your_WiFi_Name";             // Your WiFi SSID
-const char* password = "Your_WiFi_Password";     // Your WiFi Password
+char ssid[] = "wifi_name";                   // Your WiFi SSID
+char pass[] = "wifi_password";               // Your WiFi Password
 ```
 
 ### 5. Upload and Test
 1. Select **ESP32 Dev Module** in Arduino IDE
 2. Upload code to ESP32
 3. Open Serial Monitor (115200 baud)
-4. Verify WiFi and Blynk connection
-5. Test each drawer using mobile app
+4. Look for these messages:
+   - "Current RTC time: ..."
+   - "Smart Medicine Box Started!"
+   - "Connected to Blynk!"
 
 ## 🚀 Usage Guide
 
 ### Initial Setup
-1. **Set Medicine Times**: Use time input widgets in app
-2. **Verify Connection**: Check device status shows "Online"
-3. **Test Drawers**: Use manual test feature to verify hardware
+1. **Set Medicine Times**: Use time input widgets in Blynk app (format: HH:MM)
+2. **Verify Connection**: Check device shows "Online" in Blynk console
+3. **Test Current Time**: Press "Show Current Time" button to verify RTC
 4. **Enable Notifications**: Allow push notifications in phone settings
 
 ### Daily Operation
 
 #### Medicine Time Sequence
-1. **Alert Phase**: Red LED + buzzer + app notification
-2. **Taking Medicine**: Open drawer (reed switch triggered)
-3. **Confirmation**: Green LED + confirmation notification + log entry
-4. **Missed Alert**: If not taken within 30 minutes → warning notification
+1. **Alert Phase**: Red LED turns on + buzzer beeps every second
+2. **Taking Medicine**: Open drawer (reed switch detects opening)
+3. **Confirmation**: Red LED/buzzer stop, Green LED turns on for 10 minutes
+4. **Logging**: Activity automatically logged with timestamp
 
 #### Mobile App Features
 - **📅 Schedule Management**: Set/modify medicine times remotely
-- **📊 Real-time Monitoring**: View current status and drawer states  
+- **📊 Real-time Status**: View which medicines are taken/scheduled
 - **📝 Activity Logging**: Complete history with timestamps
-- **🔔 Smart Notifications**: Never miss a dose
-- **🧪 Remote Testing**: Test system functionality from anywhere
+- **🔔 Smart Notifications**: Push notifications for medicine time
+- **⏰ Time Verification**: Check current RTC time anytime
 
 ### Understanding LED Status
 | Color | Meaning | Duration |
 |-------|---------|----------|
 | ⚫ Off | Normal state | - |
-| 🔴 Red | Medicine time - take now | Until drawer opened |
+| 🔴 Red | Medicine time - take now! | Until drawer opened |
 | 🟢 Green | Medicine taken - confirmed | 10 minutes |
+
+### Reed Switch Logic
+- **Drawer Closed**: Magnet close to reed switch = LOW
+- **Drawer Open**: Magnet away from reed switch = HIGH (triggers medicine taken)
 
 ## 📱 Mobile App Interface
 
 ### Dashboard Layout
-```
-┌─────────────────────────────────────┐
-│           Current Time              │
-│           System Status             │  
-├─────────────────────────────────────┤
-│  🕐 Morning Before  🕐 Morning After │
-│     Breakfast         Breakfast     │
-├─────────────────────────────────────┤  
-│   🕐 Noon Before    🕐 Noon After    │
-│      Lunch            Lunch         │
-├─────────────────────────────────────┤
-│  🕐 Evening Before  🕐 Night After   │
-│     Dinner           Dinner         │
-├─────────────────────────────────────┤
-│ 🔴 LED1  🔴 LED2  🔴 LED3           │
-│ 🔴 LED4  🔴 LED5  🔴 LED6           │
-├─────────────────────────────────────┤
-│      [Reset Log]  [Test Drawer]     │
-├─────────────────────────────────────┤
-│        Medicine Intake Log          │
-│    (Terminal showing full log)      │
-└─────────────────────────────────────┘
-```
+![alt text](Images/photo_2025-08-16_20-45-39.jpg) ![alt text](Images/photo_2025-08-25_19-56-14.jpg)
+
 
 ## 📊 Sample Log Output
 
 ```
 === Daily Medicine Log ===
-08:00 - ⏰ Morning Before Breakfast - Medicine time started
-08:02 - ✅ Morning Before Breakfast - Medicine taken
-08:30 - ⏰ Morning After Breakfast - Medicine time started
-09:05 - ❌ Morning After Breakfast - MISSED (30+ min)
-12:00 - ⏰ Noon Before Lunch - Medicine time started  
-12:01 - ✅ Noon Before Lunch - Medicine taken
-
-=== NEW DAY - 16/8/2025 ===
-08:00 - ⏰ Morning Before Breakfast - Medicine time started
+1. Morning Before taken at 8:02
+2. Morning After taken at 8:32
+3. Noon Before taken at 12:01
+4. Noon After taken at 12:31
+5. Night Before taken at 18:02
+6. Night After taken at 19:15
 ```
 
 ## 🔧 Troubleshooting
 
-### Common Issues
+### Common Issues & Solutions
 
 #### Device Won't Connect to WiFi
 ```cpp
-// Check in Serial Monitor:
-- "Connecting to WiFi..." (should show your SSID)
-- Verify SSID and password are correct
-- Ensure 2.4GHz WiFi network (ESP32 doesn't support 5GHz)
+// Check Serial Monitor:
+Serial.println("Current RTC time: ..."); // Should show current time
+// Verify:
+- WiFi SSID and password are correct
+- Using 2.4GHz network (ESP32 doesn't support 5GHz)
+- Network has internet access
 ```
 
 #### Blynk Connection Failed  
 ```cpp
 // Verify in code:
-- Template ID matches Blynk Console
-- Auth Token is correct (from Device tab, not Template)
+- Template ID matches Blynk Console exactly
+- Auth Token is from Device tab (not Template)
 - Device shows "Online" in Blynk Console
 ```
 
 #### RTC Not Working
 ```cpp
-// Check connections:
-- SDA → GPIO 21
-- SCL → GPIO 22  
-- VCC → 3.3V (not 5V)
-- Ensure RTC has backup battery
+// Check Serial Monitor:
+"Current RTC time: 2025/8/22 14:30:25" // Should show reasonable time
+
+// If time is wrong:
+- RTC module needs backup battery (CR2032)
+- Check I2C connections (SDA=21, SCL=22)
+- Verify 3.3V power (not 5V)
 ```
 
 #### Reed Switches Not Responding
 ```cpp
-// For GPIO 34-39:
-- Must use external 10kΩ pull-up resistors
-- Cannot use INPUT_PULLUP on these pins
-- Check magnet polarity and distance
+// For different pin types:
+GPIO 2, 4:     pinMode(pin, INPUT_PULLUP);  // Built-in pull-up
+GPIO 34-39:    pinMode(pin, INPUT);         // External 10kΩ pull-up required
+
+// Check magnet alignment and distance
 ```
 
-### Debug Commands
+#### Medicine Time Not Triggering
+```cpp
+// Debug steps:
+1. Check current time: Press "Show Current Time" button
+2. Set test time 2 minutes in future
+3. Watch Serial Monitor for:
+   "MEDICINE TIME TRIGGERED for Morning Before"
+```
+
+### Debug Serial Messages
 Monitor these in Serial Monitor (115200 baud):
 ```
-✓ "WiFi connected!" - Network connection OK
-✓ "Blynk Connected!" - IoT platform connected  
-✓ "Smart Medicine Box with Blynk Initialized!" - Setup complete
-✓ "Medicine time! Drawer X" - Schedule triggered
-✓ "Medicine taken from drawer X" - Successful intake
+✓ "Current RTC time: 2025/8/22 14:30:25" - RTC working
+✓ "Smart Medicine Box Started!" - Setup complete
+✓ "Connected to Blynk!" - Blynk connected
+✓ "Current time: 14:30:25" - Printed every 30 seconds
+✓ "MEDICINE TIME TRIGGERED for Morning Before" - Alert activated
+✓ "Morning Before taken at 14:32" - Medicine logged
 ```
 
-## 🔮 Future Enhancements
+## 🔮 Key Code Features
 
-### Planned Features
-- [ ] **Multiple Patient Support**: Manage medicine for multiple family members
-- [ ] **Advanced Analytics**: Weekly/monthly compliance reports  
-- [ ] **Voice Alerts**: Audio medicine names and instructions
-- [ ] **Pill Counter**: Track remaining medicine quantity
-- [ ] **Doctor Integration**: Share reports directly with healthcare providers
-- [ ] **Emergency Alerts**: Critical medication reminders
-- [ ] **Backup Connectivity**: SMS alerts when WiFi is down
+### Automatic Time Setting
+- RTC automatically set to compile time on first run
+- Handles power loss recovery
+- Manual time adjustment capability
 
-### Hardware Upgrades
-- [ ] **LCD Display**: Local status display without app
-- [ ] **Camera Module**: Visual confirmation of medicine taking
-- [ ] **Weight Sensors**: Automatic pill counting
-- [ ] **NFC Tags**: Quick patient identification
-- [ ] **Battery Backup**: Continue operation during power outages
+### Smart Pin Handling
+- Automatic INPUT_PULLUP for GPIO 2, 4
+- INPUT mode for GPIO 34-39 (input-only pins)
+- Proper reed switch logic for all pin types
 
+### Efficient Time Parsing
+- Handles time input widgets that send seconds since midnight
+- Converts to hours and minutes automatically
+- Validates time ranges (0-23 hours, 0-59 minutes)
 
+### Robust Buzzer Control
+- Buzzer beeps every second when any alarm is active
+- Stops immediately when medicine is taken
+- No interference between multiple active alarms
+
+### Enhanced Debugging
+- Current time printed every 30 seconds
+- Schedule checking debug every minute
+- Detailed logging for troubleshooting
+
+## 🤝 Contributing
 
 ### Development Setup
 ```bash
-git clone https://github.com/yourusername/smart-medicine-box.git
-cd smart-medicine-box
-# Open in Arduino IDE and install dependencies
+git clone https://github.com/yourusername/meditrack.git
+cd meditrack
+# Open MediTrack.ino in Arduino IDE
 ```
 
-## 🙏 Acknowledgments
+### Code Structure
+- `setup()` - Initialize hardware and connections
+- `loop()` - Main execution cycle
+- `checkMedicineTime()` - Handle scheduling logic
+- `checkDrawerStatus()` - Monitor reed switches
+- `parseTime()` - Process time input from Blynk
+- `updateBlynkStatus()` - Update mobile app display
 
-- **Blynk Team** - For the excellent IoT platform
-- **Adafruit** - For the reliable RTClib library  
-- **Arduino Community** - For extensive ESP32 support
-- **Healthcare Workers** - Inspiration for medication compliance solutions
+## 📞 Support & Documentation
 
-## 📞 Support
+### Helpful Resources
+- **Blynk Documentation**: [docs.blynk.cloud](https://docs.blynk.cloud)
+- **ESP32 Reference**: [docs.espressif.com](https://docs.espressif.com)
+- **RTClib Guide**: [learn.adafruit.com](https://learn.adafruit.com/adafruit-pcf8523-real-time-clock)
 
-### Documentation  
-- **Blynk Documentation**: [docs.blynk.io](https://docs.blynk.io)
-- **ESP32 Reference**: [docs.espressif.com](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
-- **Arduino ESP32**: [github.com/espressif/arduino-esp32](https://github.com/espressif/arduino-esp32)
+### Getting Help
+- Check Serial Monitor output first
+- Verify hardware connections match pin assignments
+- Test individual components before full system
+- Use Blynk console to monitor device status
 
 ---
 
-**⭐ Star this repo if it helped you manage your medications better!**
+**⭐ Star this repo if it helps you manage medications better!**
 
 **Made with ❤️ for better healthcare management**
