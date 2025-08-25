@@ -215,8 +215,9 @@ char pass[] = "wifi_password";               // Your WiFi Password
 
 ## 📱 Mobile App Interface
 
-### Dashboard Layout
-![alt text](Images/photo_2025-08-16_20-45-39.jpg) ![alt text](Images/photo_2025-08-25_19-56-14.jpg)
+### Dashboard Layout (Blynk IoT App)
+| ![First](Images/photo_2025-08-16_20-45-39.jpg) | ![Second](Images/photo_2025-08-25_19-56-14.jpg) |
+|-----------------------------------------------|-----------------------------------------------|
 
 
 ## 📊 Sample Log Output
